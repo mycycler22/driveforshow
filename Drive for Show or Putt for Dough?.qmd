@@ -1,0 +1,1954 @@
+---
+title: "Drive for Show or Putt for Dough?"
+subtitle: "Mark Yan"
+format:
+  pdf:
+    embed-resources: true
+    include-in-header: golf.tex
+    indent: true
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+```{r, message = FALSE, echo = FALSE}
+library(modelsummary)
+library(broom)
+library(tidyverse)
+library(mosaic)
+library(corrplot)
+library(rpart)
+library(rattle)
+library(randomForest)
+library(kableExtra)
+library(Metrics)
+library(factoextra)
+```
+
+```{r, message=FALSE, echo=FALSE, warning=FALSE}
+top10_2024 <- read_csv("PGAtop10finishes2024.csv")
+top10_2023 <- read_csv("PGAtop10finishes2023.csv")
+top10_2022 <- read_csv("PGAtop10finishes2022.csv")
+top10_2021 <- read_csv("PGAtop10finishes2021.csv")
+top10_2021 <- top10_2021 %>% 
+  mutate(across(everything(), ~ replace_na(., 0)))
+
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+scrambling_2024 <- read_csv("PGAscrambling2024.csv")
+scrambling_2023 <- read_csv("PGAscrambling2023.csv")
+scrambling_2022 <- read_csv("PGAscrambling2022.csv")
+scrambling_2021 <- read_csv("PGAscrambling2021.csv")
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+putting_strokes_gained2024 <- read_csv("PGAputtingstrokesgained2024.csv")
+putting_strokes_gained2023 <- read_csv("PGAputtingstrokesgained2023.csv")
+putting_strokes_gained2022 <- read_csv("PGAputtingstrokesgained2022.csv")
+putting_strokes_gained2021 <- read_csv("PGAputtingstrokesgained2021.csv")
+```
+
+```{r, message=FALSE, echo=FALSE}
+scoring_average2024 <- read_csv("PGAscoringaverage2024.csv")
+scoring_average2023 <- read_csv("PGAscoringaverage2023.csv")
+scoring_average2022 <- read_csv("PGAscoringaverage2022.csv")
+scoring_average2021 <- read_csv("PGAscoringaverage2021.csv")
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+putt3_2024 <- read_csv("PGA3putts2024.csv")
+putt3_2023 <- read_csv("PGA3putts2023.csv")
+putt3_2022 <- read_csv("PGA3putts2022.csv")
+putt3_2021 <- read_csv("PGA3putts2021.csv")
+```
+
+```{r, message=FALSE, echo=FALSE}
+approach_to_green2024 <- read_csv("PGAapproachtogreen2024.csv")
+approach_to_green2023 <- read_csv("PGAapproachtogreen2023.csv")
+approach_to_green2022 <- read_csv("PGAapproachtogreen2022.csv")
+approach_to_green2021 <- read_csv("PGAapproachtogreen2021.csv")
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+ball_speed2024 <- read_csv("PGAballspeed2024.csv")
+ball_speed2023 <- read_csv("PGAballspeed2023.csv")
+ball_speed2022 <- read_csv("PGAballspeed2022.csv")
+ball_speed2021 <- read_csv("PGAballspeed2021.csv")
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+driving_distance2024 <- read_csv("PGAdrivingdistance2024.csv")
+driving_distance2023 <- read_csv("PGAdrivingdistance2023.csv")
+driving_distance2022 <- read_csv("PGAdrivingdistance2022.csv")
+driving_distance2021 <- read_csv("PGAdrivingdistance2021.csv")
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+driving_accuracy2024 <- read_csv("PGAdrivingaccuracy2024.csv")
+driving_accuracy2023 <- read_csv("PGAdrivingaccruacy2023.csv")
+driving_accuracy2022 <- read_csv("PGAdrivingaccruacy2022.csv")
+driving_accuracy2021 <- read_csv("PGAdrivingaccuracy2021.csv")
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+strokes_gained_off_tee2024 <- read_csv("PGAoffteestrokesgained2024.csv")
+strokes_gained_off_tee2023 <- read_csv("PGAoffteestrokesgained2023.csv")
+strokes_gained_off_tee2022 <- read_csv("PGAoffteestrokesgained2022.csv")
+strokes_gained_off_tee2021 <- read_csv("PGAoffteestrokesgained2021.csv")
+```
+
+```{r, message=FALSE, echo=FALSE, warning=FALSE}
+money2024 <- read_csv("PGAearnings2024.csv")
+money2024 <- money2024 %>% 
+  mutate(across(everything(), ~ replace_na(., 0)))
+
+money2024 <- money2024 %>% 
+  mutate(MONEY = substring(MONEY, 2))
+money2024$MONEY <- as.numeric(money2024$MONEY)
+
+money2023 <- read_csv("PGAearnings2023.csv")
+
+money2023 <- money2023 %>% 
+  mutate(across(everything(), ~ replace_na(., 0)))
+
+money2023 <- money2023 %>% 
+  mutate(MONEY = substring(MONEY, 2))
+money2023$MONEY <- as.numeric(money2023$MONEY)
+
+money2022 <- read_csv("PGAearnings2022.csv")
+money2022 <- money2022 %>% 
+  mutate(across(everything(), ~ replace_na(., 0)))
+
+money2022 <- money2022 %>% 
+  mutate(MONEY = substring(MONEY, 2))
+money2022$MONEY <- as.numeric(money2022$MONEY)
+
+money2021 <- read_csv("PGAearnings2021.csv")
+
+money2021 <- money2021 %>% 
+  mutate(across(everything(), ~ replace_na(., 0)))
+
+money2021 <- money2021 %>% 
+  mutate(MONEY = substring(MONEY, 2))
+
+money2021$MONEY <- as.numeric(money2021$MONEY)
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+greens_in_reg2024 <- read_csv("PGAgreensinreg2024.csv")
+greens_in_reg2023 <- read_csv("PGAgreensinreg2023.csv")
+greens_in_reg2022 <- read_csv("PGAgreensinreg2022.csv")
+greens_in_reg2021 <- read_csv("PGAgreensinreg2021.csv")
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+putt_average2024 <- read_csv("PGAputtingaverage2024.csv")
+putt_average2023 <- read_csv("PGAputtingaverage2023.csv")
+putt_average2022 <- read_csv("PGAputtingaverage2022.csv")
+putt_average2021 <- read_csv("PGAputtingaverage2021.csv")
+```
+
+```{r, message=FALSE, echo=FALSE}
+pga2024 <- left_join(money2024, top10_2024, by = "PLAYER")
+pga2024 <- pga2024 %>% 
+  rename(PLAYER_ID = PLAYER_ID.x)
+pga2024$`YTD VICTORIES` = NULL
+pga2024$RANK.x <- NULL
+pga2024$RANK.y <- NULL
+pga2024$PLAYER_ID.y <- NULL
+pga2024$MOVEMENT.x <- NULL
+pga2024$MOVEMENT.y <- NULL
+
+pga2024 <- left_join(pga2024, putt3_2024, by = "PLAYER")
+
+pga2024 <- pga2024 %>% 
+  rename(PLAYER_ID = PLAYER_ID.x)
+pga2024$RANK <- NULL
+pga2024$PLAYER_ID.y = NULL
+pga2024$MOVEMENT = NULL
+pga2024$`TOTAL HOLES (OVERALL)` = NULL
+
+
+pga2024 <- pga2024 %>% 
+  rename(three_putt_percentage = '%')
+
+pga2024 <- right_join(pga2024, driving_distance2024, by = "PLAYER")
+
+pga2024 <- pga2024 %>% 
+  rename(PLAYER_ID = PLAYER_ID.x)
+
+pga2024$RANK = NULL
+pga2024$PLAYER_ID.y = NULL
+pga2024$MOVEMENT = NULL
+pga2024$`TOTAL DISTANCE` = NULL
+pga2024 <- pga2024 %>% 
+  rename(avg_distance = AVG)
+
+pga2024 <- left_join(pga2024, putting_strokes_gained2024, by = "PLAYER")
+
+pga2024 <- pga2024 %>% 
+  rename(PLAYER_ID = PLAYER_ID.x)
+
+pga2024$RANK = NULL
+pga2024$MOVEMENT = NULL
+pga2024$PLAYER_ID.y = NULL
+pga2024$`MEASURED ROUNDS` = NULL
+
+pga2024 <- pga2024 %>% 
+  rename(avg_strokes_gained_putting = AVG)
+pga2024 <- pga2024 %>% 
+  rename(total_strokes_gained_putting = `TOTAL SG:PUTTING`)
+
+pga2024 <- left_join(pga2024, putt_average2024, by = "PLAYER")
+pga2024 <- pga2024 %>% 
+  rename(PLAYER_ID = PLAYER_ID.x)
+
+pga2024$RANK = NULL
+pga2024$MOVEMENT = NULL
+pga2024$PLAYER_ID.y = NULL
+
+pga2024 <- pga2024 %>% 
+  rename(avg_putts_per_hole = AVG)
+
+pga2024 <- left_join(pga2024, driving_accuracy2024, by = "PLAYER")
+
+
+pga2024 <- pga2024 %>% 
+  rename(PLAYER_ID = PLAYER_ID.x)
+
+pga2024$RANK = NULL
+pga2024$MOVEMENT = NULL
+pga2024$PLAYER_ID.y = NULL
+pga2024$`POSSIBLE FAIRWAYS` = NULL
+
+pga2024 <- pga2024 %>% 
+  rename(fairway_percentage = '%')
+
+pga2024 <- left_join(pga2024, scoring_average2024, by = "PLAYER")
+
+pga2024 <- pga2024 %>% 
+  rename(PLAYER_ID = PLAYER_ID.x)
+
+pga2024$RANK = NULL
+pga2024$MOVEMENT = NULL
+pga2024$PLAYER_ID.y = NULL
+pga2024$`TOTAL ADJUSTMENT` = NULL
+pga2024$`TOTAL STROKES` = NULL
+
+
+pga2024 <- pga2024 %>% 
+  rename(avg_score = AVG)
+
+pga2024 <- left_join(pga2024, ball_speed2024, by = "PLAYER")
+
+pga2024 <- pga2024 %>% 
+  rename(PLAYER_ID = PLAYER_ID.x)
+
+pga2024$RANK = NULL
+pga2024$MOVEMENT = NULL
+pga2024$PLAYER_ID.y = NULL
+pga2024$`TOTAL BALL SPEED` = NULL
+pga2024$`TOTAL ATTEMPTS` = NULL
+
+pga2024 <- pga2024 %>% 
+  rename(avg_ball_speed = AVG)
+
+pga2024 <- left_join(pga2024, greens_in_reg2024, by = "PLAYER")
+
+pga2024 <- pga2024 %>% 
+  rename(PLAYER_ID = PLAYER_ID.x)
+
+
+pga2024$RANK = NULL
+pga2024$MOVEMENT = NULL
+pga2024$PLAYER_ID.y = NULL
+pga2024$`GREENS HIT.y` = NULL
+pga2024$`# HOLES` = NULL
+pga2024$`RELATIVE/PAR` = NULL
+
+pga2024 <- pga2024 %>% 
+  rename(greens_hit = `GREENS HIT.x`)
+
+pga2024 <- pga2024 %>% 
+  rename(gir_percentage = '%')
+
+pga2024 <- left_join(pga2024, scrambling_2024, by = "PLAYER")
+
+pga2024 <- pga2024 %>% 
+  rename(PLAYER_ID = PLAYER_ID.x)
+
+pga2024$RANK = NULL
+pga2024$PLAYER_ID.y = NULL
+pga2024$MOVEMENT = NULL
+pga2024$`MISSED GIR` = NULL
+pga2024$`PAR OR BETTER` = NULL
+pga2024$`TOTAL 3 PUTTS` = NULL
+
+pga2024 <- pga2024 %>% 
+  rename(scramble_pct = "%")
+
+pga2024 <- left_join(pga2024, approach_to_green2024, by = "PLAYER")
+
+pga2024 <- pga2024 %>% 
+  rename(PLAYER_ID = PLAYER_ID.x)
+
+pga2024$RANK = NULL
+pga2024$MOVEMENT = NULL
+pga2024$PLAYER_ID.y = NULL
+pga2024$`MEASURED ROUNDS` = NULL
+
+pga2024 <- pga2024 %>% 
+  rename(avg_strokes_gained_approach = AVG)
+
+pga2024 <- pga2024 %>% 
+  rename(total_strokes_gained_approach = `TOTAL SG:APP`)
+
+pga2024 <- pga2024 %>% 
+  mutate(across(c(`TOP 10`, `1ST`, `2ND`, `3RD`), ~ replace(., is.na(.), 0)))
+
+pga2024 <- left_join(pga2024, strokes_gained_off_tee2024, by = "PLAYER")
+
+pga2024 <- pga2024 %>% 
+  rename(PLAYER_ID = PLAYER_ID.x)
+
+pga2024$RANK = NULL
+pga2024$MOVEMENT = NULL
+pga2024$PLAYER_ID.y = NULL
+pga2024$`MEASURED ROUNDS` = NULL
+
+pga2024 <- pga2024 %>% 
+  rename(avg_strokes_gained_off_tee = AVG)
+pga2024 <- pga2024 %>% 
+  rename(total_strokes_gained_off_tee = `TOTAL SG:OTT`)
+
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+pga2024 <- pga2024 %>% 
+  mutate(three_putt_percentage = substring(three_putt_percentage, 1, nchar(three_putt_percentage) - 1))
+
+pga2024$three_putt_percentage <- as.numeric(pga2024$three_putt_percentage)
+
+pga2024 <- pga2024 %>% 
+  mutate(`BIRDIE CONVERSION` = substring(`BIRDIE CONVERSION`, 1, nchar(`BIRDIE CONVERSION`) - 1))
+
+pga2024$`BIRDIE CONVERSION` <- as.numeric(pga2024$`BIRDIE CONVERSION`)
+
+pga2024 <- pga2024 %>% 
+  mutate(fairway_percentage = substring(fairway_percentage, 1, nchar(fairway_percentage) - 1))
+
+pga2024$fairway_percentage <- as.numeric(pga2024$fairway_percentage)
+
+pga2024 <- pga2024 %>% 
+  mutate(gir_percentage = substring(gir_percentage, 1, nchar(gir_percentage) - 1))
+
+pga2024$gir_percentage <- as.numeric(pga2024$gir_percentage)
+
+pga2024 <- pga2024 %>% 
+  mutate(scramble_pct = substring(scramble_pct, 1, nchar(scramble_pct) - 1))
+
+pga2024$scramble_pct <- as.numeric(pga2024$scramble_pct)
+
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+pga2023 <- left_join(money2023, top10_2023, by = "PLAYER")
+
+pga2023 <- pga2023 %>% 
+  rename(PLAYER_ID = PLAYER_ID.x)
+
+pga2023$RANK.x = NULL
+pga2023$MOVEMENT.x = NULL
+pga2023$RANK.y = NULL
+pga2023$MOVEMENT.y = NULL
+pga2023$PLAYER_ID.y = NULL
+pga2023$`YTD VICTORIES` = NULL
+
+pga2023 <- pga2023 %>% 
+  mutate(across(c(`TOP 10`, `1ST`, `2ND`, `3RD`), ~ replace(., is.na(.), 0)))
+
+pga2023 <- left_join(pga2023, scoring_average2023, by = "PLAYER")
+
+pga2023 <- pga2023 %>% 
+  rename(PLAYER_ID = PLAYER_ID.x)
+
+pga2023$RANK = NULL
+pga2023$MOVEMENT = NULL
+pga2023$PLAYER_ID.y = NULL
+pga2023$`TOTAL STROKES` = NULL
+pga2023$`TOTAL ADJUSTMENT` = NULL
+pga2023 <- pga2023 %>% 
+  rename(avg_score = AVG)
+
+pga2023 <- left_join(pga2023, driving_distance2023, by = "PLAYER")
+
+pga2023 <- pga2023 %>% 
+  rename(PLAYER_ID = PLAYER_ID.x)
+
+pga2023$RANK = NULL
+pga2023$MOVEMENT = NULL
+pga2023$PLAYER_ID.y = NULL
+pga2023$`TOTAL DISTANCE` = NULL
+
+pga2023 <- pga2023 %>% 
+  rename(avg_distance = AVG)
+
+pga2023 <- left_join(pga2023, strokes_gained_off_tee2023, by = "PLAYER")
+
+pga2023 <- pga2023 %>% 
+  rename(PLAYER_ID = PLAYER_ID.x)
+
+pga2023$RANK = NULL
+pga2023$MOVEMENT = NULL
+pga2023$PLAYER_ID.y = NULL
+pga2023$`MEASURED ROUNDS` = NULL
+
+pga2023 <- pga2023 %>% 
+  rename(avg_strokes_gained_off_tee = AVG)
+pga2023 <- pga2023 %>% 
+  rename(total_strokes_gained_off_tee = `TOTAL SG:OTT`)
+
+
+pga2023$PLAYER_ID <- as.double(pga2023$PLAYER_ID)
+
+pga2023 <- left_join(pga2023, ball_speed2023, by = c("PLAYER", "PLAYER_ID"))
+
+
+pga2023$RANK = NULL
+pga2023$MOVEMENT = NULL
+pga2023$`TOTAL BALL SPEED` = NULL
+pga2023$`TOTAL ATTEMPTS` = NULL
+
+pga2023 <- pga2023 %>% 
+  rename(avg_ball_speed = AVG)
+
+pga2023 <- left_join(pga2023, driving_accuracy2023, by = c("PLAYER", "PLAYER_ID"))
+
+
+pga2023$RANK = NULL
+pga2023$MOVEMENT = NULL
+pga2023$`POSSIBLE FAIRWAYS` = NULL
+
+pga2023 <- pga2023 %>% 
+  rename(fairway_percentage = '%')
+
+pga2023 <- left_join(pga2023, approach_to_green2023, by = c("PLAYER", "PLAYER_ID"))
+
+
+pga2023$RANK = NULL
+pga2023$MOVEMENT = NULL
+pga2023$`MEASURED ROUNDS` = NULL
+
+pga2023 <- pga2023 %>% 
+  rename(avg_strokes_gained_approach = AVG)
+
+pga2023 <- pga2023 %>% 
+  rename(total_strokes_gained_approach = `TOTAL SG:APP`)
+
+pga2023 <- left_join(pga2023, greens_in_reg2023, by = c("PLAYER", "PLAYER_ID"))
+
+pga2023$RANK = NULL
+pga2023$MOVEMENT = NULL
+pga2023$`RELATIVE/PAR` = NULL
+pga2023$`# HOLES` = NULL
+pga2023$`GREENS HIT` = NULL
+
+
+pga2023 <- pga2023 %>% 
+  rename(gir_percentage = '%')
+
+pga2023 <- left_join(pga2023, scrambling_2023, by = c("PLAYER", "PLAYER_ID"))
+
+pga2023$RANK = NULL
+pga2023$MOVEMENT = NULL
+pga2023$`PAR OR BETTER` = NULL
+pga2023$`MISSED GIR` = NULL
+
+pga2023 <- pga2023 %>% 
+  rename(scramble_pct = '%')
+
+pga2023 <- left_join(pga2023, putt_average2023, by = c("PLAYER", "PLAYER_ID"))
+
+pga2023$RANK = NULL
+pga2023$MOVEMENT = NULL
+
+pga2023 <- pga2023 %>% 
+  rename(avg_putts_per_hole = AVG)
+
+pga2023 <- pga2023 %>% 
+  rename(greens_hit = `GREENS HIT`)
+
+pga2023 <- left_join(pga2023, putt3_2023, by = c("PLAYER", "PLAYER_ID"))
+
+pga2023$RANK = NULL
+pga2023$MOVEMENT = NULL
+pga2023$`TOTAL HOLES (OVERALL)` = NULL
+pga2023$`TOTAL 3 PUTTS` = NULL
+
+pga2023 <- pga2023 %>% 
+  rename(three_putt_percentage = '%')
+
+pga2023 <- left_join(pga2023, putting_strokes_gained2023, by = c("PLAYER", "PLAYER_ID"))
+
+pga2023$RANK = NULL
+pga2023$MOVEMENT = NULL
+pga2023$`MEASURED ROUNDS` = NULL
+
+pga2023 <- pga2023 %>% 
+  rename(avg_strokes_gained_putting = AVG)
+pga2023 <- pga2023 %>% 
+  rename(total_strokes_gained_putting = `TOTAL SG:PUTTING`)
+
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+pga2023 <- pga2023 %>% 
+  mutate(fairway_percentage = substring(fairway_percentage, 1, nchar(fairway_percentage) - 1))
+
+pga2023$fairway_percentage <- as.numeric(pga2023$fairway_percentage)
+
+pga2023 <- pga2023 %>% 
+  mutate(gir_percentage = substring(gir_percentage, 1, nchar(gir_percentage) - 1))
+
+pga2023$gir_percentage <- as.numeric(pga2023$gir_percentage)
+
+pga2023 <- pga2023 %>% 
+  mutate(scramble_pct = substring(scramble_pct, 1, nchar(scramble_pct) - 1))
+
+pga2023$scramble_pct <- as.numeric(pga2023$scramble_pct)
+
+pga2023 <- pga2023 %>% 
+  mutate(`BIRDIE CONVERSION` = substring(`BIRDIE CONVERSION`, 1, nchar(`BIRDIE CONVERSION`) - 1))
+
+pga2023$`BIRDIE CONVERSION` <- as.numeric(pga2023$`BIRDIE CONVERSION`)
+
+pga2023 <- pga2023 %>% 
+  mutate(three_putt_percentage = substring(three_putt_percentage, 1, nchar(three_putt_percentage) - 1))
+
+pga2023$three_putt_percentage <- as.numeric(pga2023$three_putt_percentage)
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+
+money2022$PLAYER_ID <- as.double(money2022$PLAYER_ID)
+pga2022 <- left_join(money2022, top10_2022, by = c("PLAYER", "PLAYER_ID"))
+
+
+pga2022$RANK.x = NULL
+pga2022$MOVEMENT.x = NULL
+pga2022$`YTD VICTORIES` = NULL
+pga2022$MOVEMENT.y = NULL
+pga2022$RANK.y = NULL
+
+pga2022 <- pga2022 %>% 
+  mutate(across(c("TOP 10", "1ST", "2ND", "3RD"), ~ replace_na(., 0)))
+
+pga2022 <- left_join(pga2022, scoring_average2022, by = c("PLAYER", "PLAYER_ID"))
+
+pga2022$RANK = NULL
+pga2022$MOVEMENT = NULL
+pga2022$`TOTAL STROKES` = NULL
+pga2022$`TOTAL ADJUSTMENT` = NULL
+
+pga2022 <- pga2022 %>% 
+  rename(avg_score = AVG)
+
+pga2022 <- left_join(pga2022, driving_distance2022, by = c("PLAYER", "PLAYER_ID"))
+
+pga2022$RANK = NULL
+pga2022$MOVEMENT = NULL
+pga2022$`TOTAL DISTANCE` = NULL
+
+pga2022 <- pga2022 %>% 
+  rename(avg_distance = AVG)
+
+pga2022 <- left_join(pga2022, ball_speed2022, by = c("PLAYER", "PLAYER_ID"))
+
+pga2022$RANK = NULL
+pga2022$MOVEMENT = NULL
+pga2022$`TOTAL BALL SPEED` = NULL
+pga2022$`TOTAL ATTEMPTS` = NULL
+
+pga2022 <- pga2022 %>% 
+  rename(avg_ball_speed = AVG)
+
+pga2022 <- left_join(pga2022, driving_accuracy2022, by = c("PLAYER", "PLAYER_ID"))
+
+pga2022$RANK = NULL
+pga2022$MOVEMENT = NULL
+pga2022$`POSSIBLE FAIRWAYS` = NULL
+
+pga2022 <- pga2022 %>% 
+  rename(fairway_percentage = '%')
+
+pga2022 <- left_join(pga2022, strokes_gained_off_tee2022, by = c("PLAYER", "PLAYER_ID"))
+
+pga2022$RANK = NULL
+pga2022$MOVEMENT = NULL
+pga2022$`MEASURED ROUNDS` = NULL
+pga2022 <- pga2022 %>% 
+  rename(avg_strokes_gained_off_tee = AVG)
+pga2022 <- pga2022 %>% 
+  rename(total_strokes_gained_off_tee = `TOTAL SG:OTT`)
+
+
+pga2022 <- left_join(pga2022, greens_in_reg2022, by = c("PLAYER", "PLAYER_ID"))
+
+pga2022$RANK = NULL
+pga2022$MOVEMENT = NULL
+pga2022$`GREENS HIT` = NULL
+pga2022$`RELATIVE/PAR` = NULL
+pga2022$`# HOLES` = NULL
+
+pga2022 <- pga2022 %>% 
+  rename(gir_percentage = '%')
+
+pga2022 <- left_join(pga2022, approach_to_green2022, by = c("PLAYER", "PLAYER_ID"))
+
+pga2022$RANK = NULL
+pga2022$MOVEMENT = NULL
+pga2022$`MEASURED ROUNDS` = NULL
+
+pga2022 <- pga2022 %>% 
+  rename(avg_strokes_gained_approach = AVG)
+pga2022 <- pga2022 %>% 
+  rename(total_strokes_gained_approach = `TOTAL SG:APP`)
+
+pga2022 <- left_join(pga2022, scrambling_2022, by = c("PLAYER", "PLAYER_ID"))
+
+pga2022$RANK = NULL
+pga2022$MOVEMENT = NULL
+pga2022$`PAR OR BETTER` = NULL
+pga2022$`MISSED GIR` = NULL
+
+pga2022 <- pga2022 %>% 
+  rename(scramble_pct = '%')
+
+pga2022 <- left_join(pga2022, putt3_2022, by = c("PLAYER", "PLAYER_ID"))
+
+pga2022$RANK = NULL
+pga2022$MOVEMENT = NULL
+pga2022$`TOTAL 3 PUTTS` = NULL
+pga2022$`TOTAL HOLES (OVERALL)` = NULL
+
+pga2022 <- pga2022 %>% 
+  rename(three_putt_percentage = '%')
+
+pga2022 <- left_join(pga2022, putt_average2022, by = c("PLAYER", "PLAYER_ID"))
+
+pga2022$RANK = NULL
+pga2022$MOVEMENT = NULL
+pga2022 <- pga2022 %>% 
+  rename(avg_putts_per_hole = AVG)
+pga2022 <- pga2022 %>% 
+  rename(greens_hit = `GREENS HIT`)
+
+
+pga2022 <- left_join(pga2022, putting_strokes_gained2022, by = c("PLAYER", "PLAYER_ID"))
+
+pga2022$RANK = NULL
+pga2022$MOVEMENT = NULL
+pga2022$`MEASURED ROUNDS` = NULL
+
+pga2022 <- pga2022 %>% 
+  rename(avg_strokes_gained_putting = AVG)
+pga2022 <- pga2022 %>% 
+  rename(total_strokes_gained_putting = `TOTAL SG:PUTTING`)
+
+
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+pga2021 <- left_join(money2021, top10_2021, by = c("PLAYER", "PLAYER_ID"))
+
+pga2021$RANK.x = NULL
+pga2021$MOVEMENT.x = NULL
+pga2021$`YTD VICTORIES` = NULL
+pga2021$RANK.y = NULL
+pga2021$MOVEMENT.y = NULL
+
+
+pga2021 <- pga2021 %>% 
+  mutate(across(c("TOP 10", "1ST", "2ND", "3RD"), ~ replace_na(., 0)))
+
+pga2021 <- left_join(pga2021, scoring_average2021, by = c("PLAYER", "PLAYER_ID"))
+
+pga2021$RANK = NULL
+pga2021$MOVEMENT = NULL
+pga2021$`TOTAL STROKES` = NULL
+pga2021$`TOTAL ADJUSTMENT` = NULL
+pga2021 <- pga2021 %>% 
+  rename(avg_score = AVG)
+
+pga2021 <- left_join(pga2021, driving_distance2021, by = c("PLAYER", "PLAYER_ID"))
+
+pga2021$RANK = NULL
+pga2021$MOVEMENT = NULL
+pga2021$`TOTAL DISTANCE` = NULL
+
+pga2021 <- pga2021 %>% 
+  rename(avg_distance = AVG)
+
+pga2021 <- left_join(pga2021, ball_speed2021, by = c("PLAYER", "PLAYER_ID"))
+
+pga2021$RANK = NULL
+pga2021$MOVEMENT = NULL
+pga2021$`TOTAL BALL SPEED` = NULL
+pga2021$`TOTAL ATTEMPTS` = NULL
+
+pga2021 <- pga2021 %>% 
+  rename(avg_ball_speed = AVG)
+
+pga2021 <- left_join(pga2021, driving_accuracy2021, by = c("PLAYER", "PLAYER_ID"))
+
+pga2021$RANK = NULL
+pga2021$MOVEMENT = NULL
+pga2021$`POSSIBLE FAIRWAYS` = NULL
+pga2021 <- pga2021 %>% 
+  rename(fairway_percentage = '%')
+
+pga2021 <- left_join(pga2021, strokes_gained_off_tee2021, by = c("PLAYER", "PLAYER_ID"))
+
+pga2021$RANK = NULL
+pga2021$MOVEMENT = NULL
+pga2021$`MEASURED ROUNDS` = NULL
+
+pga2021 <- pga2021 %>% 
+  rename(avg_strokes_gained_off_tee = AVG)
+pga2021 <- pga2021 %>% 
+  rename(total_strokes_gained_off_tee = `TOTAL SG:OTT`)
+
+pga2021 <- left_join(pga2021, greens_in_reg2021, by = c("PLAYER", "PLAYER_ID"))
+
+pga2021$RANK = NULL
+pga2021$MOVEMENT = NULL
+pga2021$`RELATIVE/PAR` = NULL
+pga2021$`# HOLES` = NULL
+pga2021$`GREENS HIT` = NULL
+
+pga2021 <- pga2021 %>% 
+  rename(gir_percentage = '%')
+
+
+pga2021 <- left_join(pga2021, approach_to_green2021, by = c("PLAYER", "PLAYER_ID"))
+
+pga2021$RANK = NULL
+pga2021$MOVEMENT = NULL
+pga2021$`MEASURED ROUNDS` = NULL
+
+pga2021 <- pga2021 %>% 
+  rename(avg_strokes_gained_approach = AVG)
+pga2021 <- pga2021 %>% 
+  rename(total_strokes_gained_approach = `TOTAL SG:APP`)
+
+pga2021 <- left_join(pga2021, scrambling_2021, by = c("PLAYER", "PLAYER_ID"))
+
+pga2021$RANK = NULL
+pga2021$MOVEMENT = NULL
+pga2021$`MISSED GIR` = NULL
+pga2021$`PAR OR BETTER` = NULL
+
+pga2021 <- pga2021 %>% 
+  rename(scramble_pct = '%')
+
+pga2021 <- left_join(pga2021, putt3_2021, by = c("PLAYER", "PLAYER_ID"))
+
+pga2021$RANK = NULL
+pga2021$MOVEMENT = NULL
+pga2021$`TOTAL 3 PUTTS` = NULL
+pga2021$`TOTAL HOLES (OVERALL)` = NULL
+
+pga2021 <- pga2021 %>% 
+  rename(three_putt_percentage = '%')
+
+pga2021 <- left_join(pga2021, putt_average2021, by = c("PLAYER", "PLAYER_ID"))
+
+pga2021$RANK = NULL
+pga2021$MOVEMENT = NULL
+
+pga2021 <- pga2021 %>% 
+  rename(greens_hit = `GREENS HIT`)
+
+pga2021 <- pga2021 %>% 
+  rename(avg_putts_per_hole = AVG)
+
+pga2021 <- left_join(pga2021, putting_strokes_gained2021, by = c("PLAYER", "PLAYER_ID"))
+
+pga2021$RANK = NULL
+pga2021$MOVEMENT = NULL
+pga2021$`MEASURED ROUNDS` = NULL
+
+pga2021 <- pga2021 %>% 
+  rename(avg_strokes_gained_putting = AVG)
+
+pga2021 <- pga2021 %>% 
+  rename(total_strokes_gained_putting = `TOTAL SG:PUTTING`)
+
+
+```
+
+```{r, message=FALSE, echo=FALSE, warning=FALSE}
+pga2023 <- na.omit(pga2023)
+pga2022 <- na.omit(pga2022)
+pga2021 <- na.omit(pga2021)
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+pga2024$total_strokes_gained <- pga2024$total_strokes_gained_off_tee + pga2024$total_strokes_gained_approach + pga2024$total_strokes_gained_putting
+
+pga2023$total_strokes_gained <- pga2023$total_strokes_gained_off_tee + pga2023$total_strokes_gained_approach + pga2023$total_strokes_gained_putting
+
+pga2022$total_strokes_gained <- pga2022$total_strokes_gained_off_tee + pga2022$total_strokes_gained_approach + pga2022$total_strokes_gained_putting
+
+pga2021$total_strokes_gained <- pga2021$total_strokes_gained_off_tee + pga2021$total_strokes_gained_approach + pga2021$total_strokes_gained_putting
+
+```
+
+
+## Introduction
+
+For a long time, there have been debates regarding distance in golf.
+Amidst the latest developments and innovations in golf equipment, the
+organizations responsible for championing the game, the USGA and the
+R&A, have implemented changes to equipment to rollback on distance
+gained by golfers. In 2022, they reduced the maximum driver shaft length
+to 46 inches from 48 inches. To rationalize this decision, the USGA
+cited that there has been a consistent trend of driving distance
+increasing (Cradock, 2021). Paired with new courses being longer along with current
+courses having to expand because of this consistent increase in driving
+distance, the USGA views this trend as detrimental to golf's long-term
+future (Cradock, 2021). However, not every golfer feels like this is a
+positive change. Phil Mickelson, 6-time major winner, was against this
+change as he believed that a shorter shaft length would contribute to
+shorter, more violent swings, which is a health concern (Cradock, 2021). Mickelson also
+stated that the USGA should target other parts of equipment instead of
+the driver shaft because Mickeleson argues that amateurs shouldn't use a
+46-inch driver, so this regulation only targets a minority number of
+golfers (Cradock, 2021). Currently, the USGA and R&A are implementing a
+ball rollback plan that alters testing conditions of golf balls. It will
+take effect in 2028 at the professional level before extending to the
+amateur level in 2030 (Wall, 2023). This plan alters testing conditions for golf
+balls by increasing the testing clubhead speed, increasing launch angle
+from 10 degrees to 11 degrees, reducing the testing spin rate from 2520
+rpm to 2200 rpm. Under the new testing conditions, pro golfers will lose
+13-15 yards on their driving distance (Wall, 2023). Even though the USGA
+and the R&A have stressed the long-term sustainability of golf, the PGA
+of America and the PGA Tour have been against this ball rollback plan
+stating the lack of consideration for recreational golfers as well as
+the lack of collaboration between the USGA, PGA of America, and
+equipment manufacturers (Hall, 2025). Even though this more has to do with the future of golf, with all the discourse around equipment changes and the role of distance in golf, does distance lead to more success on the golf course?
+
+Most golfers have probably heard the phrase, "Drive for show, putt for
+dough." This phrase suggests that the difference between the average
+golfer and professional golfers is the golfer's short-game attributes
+like putting and shots around the green. This phrase also suggests that
+players don't care too much about how far they hit the ball, but rather
+the approach shot and the putts that follow. Theoretically, it makes
+sense because the reality is that most of a golfer's strokes are
+approach shots to the green, putts, and shots around the green. Out of
+18 holes, driver is the first shot on 12-14 of those 18 holes. If a
+golfer shoots a 72 taking driver off the tee on 12 holes, that means
+that only 16.7% of shots are hit by a driver, meaning that a golfer's
+ability hinges on more than a golfer's ability to hit the ball far.
+
+Even though distance isn't viewed as a differentiator between golfers,
+discourse around the role of distance in a golfer's success occurred in
+2020. During the COVID-19 pandemic, Bryson DeChambeau changed his body
+composition by adding 20 pounds of muscle during the pause. Once play
+resumed that year, DeChambeau, who wasn't known for his driving distance
+before, all of a sudden became the longest hitter on the PGA Tour. In
+the 2020-2021 season, DeChambeau ended up winning three events including
+the 2020 U.S Open, where he was the only golfer in the field to hit
+under par. He was favored to win the 2020 Masters Tournament, mockingly
+calling Augusta a "par-67" because of his ability to hit the ball far.
+Even though DeChambeau thought he could overpower the course, he
+constantly found himself in terrible spots on the golf course, which
+ultimately led to him missing the cut, highlighting maybe some of the limitations associated with increased distance off the tee. 
+
+Even though DeChambeau credits most of his success that season to his
+newfound approach, has it influenced other golfers to follow a
+distance-heavy approach? One notable golfer who tried to gain distance
+was Rory McIlroy, but after establishing this approach, he ended up
+having a very sub par 2020-2021 PGA Tour season. He realized that the
+marginal distance gains weren't going to make him a better golfer. Along
+with DeChambeau's failure at the Masters Tournament, it poses the
+question: how much does driving distance contribute to on-course
+success? This paper will try to answer that question along with finding
+performance metrics that correlate the most with on-course success.
+
+## Methods
+
+This data was collected using pgatour.com/stats. This website includes
+basic metrics like scoring average, putts per hole, and driving distance
+to name a few. This website also includes advanced metrics collected
+using the PGA Tour's ShotLink data. All datasets in this study utilizes
+26 different variables ranging from basic metrics like average driving
+distance, average ball speed, scoring average, earnings, and top 10
+finishes to name a few. Advanced metrics include average strokes gained
+and total strokes gained for approach shots, shots off the tee, and
+putting. Strokes gained is an indicator of a player's performance on
+tour by pinning them to the average PGA Tour player. If a golfer's
+strokes gained is positive, it indicates that the player is performing
+better than the average PGA Tour player for a specific shot while a
+negative strokes gained means that the player is performing below
+average.
+
+This paper will only include data collected from the 2020-2021 PGA Tour
+season to the 2024 PGA Tour season.One reason is that the discussion
+regarding the role of driving distance was at its highest after Bryson
+DeChambeau's new approach after the COVID-19 pause. Another reason is
+that 2020-2024 is a good period to nullify any technological changes
+that may play a role in distance and increased forgiveness.
+
+This paper will use only players who have numbers in all of the
+variables used. So, players with no value associated with certain
+variables are not included.
+
+
+# State of the Game
+
+\noindent This section focuses on if players have performed better since
+the COVID-19 pause by using line charts of metrics like scoring average
+and total strokes gained.
+
+```{r, message=FALSE, echo=FALSE}
+#| label: fig-scoring-average
+#| fig-pos: H
+#| fig-cap-location: bottom
+#| fig-cap: Tour Average Score by Season
+
+
+scoring_averages <- data.frame(
+  year = c("2021", "2022", "2023", "2024"), 
+  scoring_average = c(mean(pga2021$avg_score), mean(pga2022$avg_score), mean(pga2023$avg_score), mean(pga2024$avg_score))
+)
+
+scoring_averages$year <- as.numeric(scoring_averages$year)
+
+
+scoring_averages %>% 
+  ggplot(aes(x = year, y = scoring_average)) + geom_line() + geom_point() + labs(title = "Scoring Average", subtitle = "by Season", x = "Season", y = "Average Score")
+
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+#| label: fig-total-strokes-gained
+#| fig-pos: H
+#| fig-cap-location: bottom
+#| fig-cap: Tour Average total strokes gained by season (off-tee, approach, putting)
+
+
+
+total_averages <- data.frame(
+  year = c(2021, 2022, 2023, 2024),
+  avg = c(mean(pga2021$total_strokes_gained), mean(pga2022$total_strokes_gained), mean(pga2023$total_strokes_gained), mean(pga2024$total_strokes_gained))
+)
+
+
+total_averages %>% 
+  ggplot(aes(x = year, y = avg)) + geom_line() + geom_point() + labs(title = "Tour Average Total Strokes Gained", subtitle = "by Season", x = "Year", y = "Total Strokes Gained")
+
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+#| label: fig-shot-types
+#| fig-pos: H
+#| fig-cap-location: bottom
+#| fig-cap: Tour average total strokes gained by shot type since the 2021 PGA Tour season
+
+
+
+situational_gains <- data.frame(
+  year = c(2021, 2022, 2023, 2024),
+  avg_strokes_gained_driving = c(mean(pga2021$total_strokes_gained_off_tee), mean(pga2022$total_strokes_gained_off_tee), mean(pga2023$total_strokes_gained_off_tee), mean(pga2024$total_strokes_gained_off_tee)),
+  avg_strokes_gained_approach = c(mean(pga2021$total_strokes_gained_approach), mean(pga2022$total_strokes_gained_approach), mean(pga2023$total_strokes_gained_approach), mean(pga2024$total_strokes_gained_approach)),
+  avg_strokes_gained_putting = c(mean(pga2021$total_strokes_gained_putting), mean(pga2022$total_strokes_gained_putting), mean(pga2023$total_strokes_gained_putting), mean(pga2024$total_strokes_gained_putting))
+)
+
+
+long_gains <- pivot_longer(situational_gains, cols = c(avg_strokes_gained_driving:avg_strokes_gained_putting), names_to = "type", values_to = "strokes")
+
+long_gains %>% 
+  ggplot(aes(x = year, y = strokes, color = type)) + geom_line() + geom_point() + labs(title = "Total Strokes Gained by Season", subtitle = "by Shot Type", x = "Season", y = "Strokes Gained") + scale_color_manual(name = "Shot Type", values = c(avg_strokes_gained_approach = "red", avg_strokes_gained_driving = "blue", avg_strokes_gained_putting = "green"), labels = c("Total Strokes Gained: Approach", "Total Strokes Gained: Driving", "Total Strokes Gained: Putting"))
+
+
+
+```
+
+\noindent The scoring average metric is an adjusted metric due to
+different courses having different par totals and varying difficulties.
+@fig-scoring-average reveals that there isn't an overall drop in scores
+nor an increase in scoring average. This might suggest that regardless
+of how the game has evolved over the last four years, player scoring has
+remained constant. However, @fig-total-strokes-gained shows the average
+total number strokes gained plateaued in the 2024 season. This might
+suggest either that courses have become more difficult meaning golfers
+cannot find as many marginal gains on the course, or the level of play
+on the PGA Tour has fallen. Out of all three situations, @fig-shot-types
+shows that the tour average of strokes gained for approach shots and
+shots off the tee declined in the 2024 season. With the trends shown in
+@fig-total-strokes-gained and @fig-shot-types, it suggests that
+the decline in the average total strokes gained on tour can be
+attributed to the declining quality of the golfers' approach shots and
+drives off the tee. Even though the scoring average since the 2021 has
+remained fairly the same, the shot quality by PGA tour golfers has
+declined since, particularly shots off the tee and approach shots to the
+green.
+
+# Trends off the Tee
+
+\noindent This section will identify the trends in ball speed, driving
+distance, and driving accuracy. This section will also
+dissect what specific driving metrics strongly correlate with strokes gained off the tee.
+
+```{r, message=FALSE, echo=FALSE}
+#| label: fig-distance-over-time
+#| fig-pos: H
+#| fig-cap-location: bottom
+#| fig-cap: Tour average driving distance since the 2021 season
+
+
+distance_line <- data.frame(
+  year = c(2021, 2022, 2023, 2024),
+  avg_distance = c(mean(pga2021$avg_distance), mean(pga2022$avg_distance), mean(pga2023$avg_distance), mean(pga2024$avg_distance))
+)
+
+
+distance_line %>% 
+  ggplot(aes(x = year, y = avg_distance)) + geom_line() + geom_point() + labs(title = "Average Distance", subtitle = "by Season", x = "Season", y = "Distance (yds)")
+
+
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+
+min_distance2021 <- min(pga2021$avg_distance)
+min_distance2022 <- min(pga2022$avg_distance)
+min_distance2023 <- min(pga2023$avg_distance)
+min_distance2024 <- min(pga2024$avg_distance)
+
+
+q1_2021 <- quantile(pga2021$avg_distance, probs = .25)
+q1_2022 <- quantile(pga2022$avg_distance, probs = .25)
+q1_2023 <- quantile(pga2023$avg_distance, probs = .25)
+q1_2024 <- quantile(pga2024$avg_distance, probs = .25)
+
+med_2021 <- median(pga2021$avg_distance)
+med_2022 <- median(pga2022$avg_distance)
+med_2023 <- median(pga2023$avg_distance)
+med_2024 <- median(pga2024$avg_distance)
+
+q3_2021 <- quantile(pga2021$avg_distance, probs = .75)
+q3_2022 <- quantile(pga2022$avg_distance, probs = .75)
+q3_2023 <- quantile(pga2023$avg_distance, probs = .75)
+q3_2024 <- quantile(pga2024$avg_distance, probs = .75)
+
+max_2021 <- max(pga2021$avg_distance)
+max_2022 <- max(pga2022$avg_distance)
+max_2023 <- max(pga2023$avg_distance)
+max_2024 <- max(pga2024$avg_distance)
+
+
+distance_box <- data.frame(
+  year = c(2021, 2022, 2023, 2024),
+  min = c(min_distance2021, min_distance2022, min_distance2023, min_distance2024),
+  q1 = c(q1_2021, q1_2022, q1_2023, q1_2024),
+  med = c(med_2021, med_2022, med_2023, med_2024),
+  q3 = c(q3_2021, q3_2022, q3_2023, q3_2024),
+  max = c(max_2021, max_2022, max_2023, max_2024)
+)
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+#| label: fig-distance-box
+#| fig-pos: H
+#| fig-cap-location: bottom
+#| fig-cap: Boxplot of Driving Distance by Season
+
+
+distance_box %>% 
+  ggplot(aes(x = year)) + geom_boxplot(aes(
+    group = year,
+    ymin = min,
+    lower = q1,
+    middle = med,
+    upper = q3,
+    max = max
+  ),
+  stat = "identity",
+  width = .5,
+) + labs(title = "Boxplots of Driving Distance", subtitle = "by Season", x = "Season", y = "Distance (yds)")
+
+
+```
+
+\noindent In @fig-distance-over-time, the tour average distance jumped
+to over 300 yds after the 2021 season, and the tour average has stayed
+around 300 yards. @fig-distance-box shows that 75% of golfers in all seasons tended to average between 295 to 305 yards. @fig-distance-box somewhat follows the trend of @fig-distance-over-time as the interquartile range jumps
+from 290-300 yards in 2021 to the 295-305 range in 2022, which remained consistent in the 2023 and 2024 PGA Tour seasons. 
+
+```{r, message=FALSE, echo=FALSE}
+#| label: fig-ball-speed-line
+#| fig-pos: H
+#| fig-cap-location: bottom
+#| fig-cap: Tour average ball speed by season
+
+
+
+ball_speed_line <- data.frame(
+  year = c(2021, 2022, 2023, 2024),
+  ball_speed = c(mean(pga2021$avg_ball_speed), mean(pga2022$avg_ball_speed), mean(pga2023$avg_ball_speed), mean(pga2024$avg_ball_speed))
+)
+
+
+ball_speed_line %>% 
+  ggplot(aes(x = year, y = ball_speed)) + geom_line() + geom_point() + labs(title = "Average Ball Speed", subtitle = "by Season", x = "Season", y = "Ball Speed (MPH)")
+
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+
+speed_min2021 <- min(pga2021$avg_ball_speed)
+speed_min2022 <- min(pga2022$avg_ball_speed)
+speed_min2023 <- min(pga2023$avg_ball_speed)
+speed_min2024 <- min(pga2024$avg_ball_speed)
+
+speed_q1_2021 <- quantile(pga2021$avg_ball_speed, prob = .25)
+speed_q1_2022 <- quantile(pga2022$avg_ball_speed, prob = .25)
+speed_q1_2023 <- quantile(pga2023$avg_ball_speed, prob = .25)
+speed_q1_2024 <- quantile(pga2024$avg_ball_speed, prob = .25)
+
+speed_med2021 <- median(pga2021$avg_ball_speed)
+speed_med2022 <- median(pga2022$avg_ball_speed)
+speed_med2023 <- median(pga2023$avg_ball_speed)
+speed_med2024 <- median(pga2024$avg_ball_speed)
+
+
+speed_q3_2021 <- quantile(pga2021$avg_ball_speed, prob = .75)
+speed_q3_2022 <- quantile(pga2022$avg_ball_speed, prob = .75)
+speed_q3_2023 <- quantile(pga2023$avg_ball_speed, prob = .75)
+speed_q3_2024 <- quantile(pga2024$avg_ball_speed, prob = .75)
+
+speed_max2021 <- max(pga2021$avg_ball_speed)
+speed_max2022 <- max(pga2022$avg_ball_speed)
+speed_max2023 <- max(pga2023$avg_ball_speed)
+speed_max2024 <- max(pga2024$avg_ball_speed)
+
+
+speed_box <- data.frame(
+  year = c(2021, 2022, 2023, 2024),
+  min = c(speed_min2021, speed_min2022, speed_min2023, speed_min2024),
+  q1 = c(speed_q1_2021, speed_q1_2022, speed_q1_2023, speed_q1_2024), 
+  med = c(speed_med2021, speed_med2022, speed_med2023, speed_med2024), 
+  q3 = c(speed_q3_2021, speed_q3_2022, speed_q3_2023, speed_q3_2024), 
+  max = c(speed_max2021, speed_max2022, speed_max2023, speed_max2024)
+)
+
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+#| label: fig-speed-box
+#| fig-pos: H
+#| fig-cap-location: bottom
+#| fig-cap: Ball speed boxplots by season
+
+
+speed_box %>% 
+  ggplot(aes(x = year)) + geom_boxplot(aes(
+    group = year,
+    ymin = min,
+    lower = q1,
+    middle = med,
+    upper = q3, 
+    ymax = max
+  ),
+  stat = "identity",
+  width = .5
+) + labs(title = "Boxplots of Ball Speed", subtitle = "by Season", x = "Season", y = "Ball Speed (MPH)")
+
+
+```
+
+\noindent Since the 2021 season, @fig-ball-speed-line shows a marginal,
+but consistent increase in the tour average ball speed from around 171
+mph in 2021 to 174 mph in 2024. @fig-speed-box follows a similar trend.
+In the 2021 PGA Tour season, 75% of golfers averaged between 167 - 175
+mph. In the 2024 PGA Tour season, 75% of golfers averaged between 170 -
+177 mph. Even though consistent increases in ball speed hasn't led to an
+increase in driving distance, PGA Tour golfers are hitting the ball
+harder.
+
+```{r, message=FALSE, echo=FALSE}
+#| label: fig-fariway-pct
+#| fig-pos: H
+#| fig-cap-location: bottom
+#| fig-cap: Tour average fairway percentage by season
+
+
+fairway_pct_line <- data.frame(
+  year = c(2021, 2022, 2023, 2024),
+  fairway_pct = c(mean(pga2021$fairway_percentage), mean(pga2022$fairway_percentage), mean(pga2023$fairway_percentage), mean(pga2024$fairway_percentage))
+)
+
+
+fairway_pct_line %>% 
+  ggplot(aes(x = year, y = fairway_pct)) + geom_line() + geom_point() + labs(title = "Tour Average Fairway Percentage", subtitle = "by Season", x = "Season", y = "Fairway Percentage(%)")
+
+
+```
+
+\noindent Even though players can hit the ball further and harder,
+@fig-fariway-pct shows that the tour average for fairway percentage has
+remained fairly constant. The lowest average fairway percentage on tour
+was around 59.75%, but the average fairway percentage on tour has
+hovered around 60.5%.
+
+```{r, message=FALSE, echo=FALSE}
+
+driving_data_strokes2021 <- pga2021 %>% 
+  select(avg_distance, avg_ball_speed, fairway_percentage, avg_strokes_gained_off_tee, total_strokes_gained_off_tee)
+
+driving_data_strokes2022 <- pga2022 %>% 
+  select(avg_distance, avg_ball_speed, fairway_percentage, avg_strokes_gained_off_tee, total_strokes_gained_off_tee)
+
+driving_data_strokes2023 <- pga2023 %>% 
+  select(avg_distance, avg_ball_speed, fairway_percentage, avg_strokes_gained_off_tee, total_strokes_gained_off_tee)
+
+driving_data_strokes2024 <- pga2024 %>% 
+  select(avg_distance, avg_ball_speed, fairway_percentage, avg_strokes_gained_off_tee, total_strokes_gained_off_tee)
+
+
+all_driving_strokes_gained <- rbind(driving_data_strokes2021, driving_data_strokes2022)
+
+all_driving_strokes_gained <- rbind(all_driving_strokes_gained, driving_data_strokes2023)
+
+all_driving_strokes_gained <- rbind(all_driving_strokes_gained, driving_data_strokes2024)
+
+driving_avg_strokes_coefficent2021 <- cor(pga2021$avg_distance, pga2021$avg_strokes_gained_off_tee, use = "complete.obs", method = "pearson")
+
+driving_avg_strokes_coefficient2022 <- cor(pga2022$avg_distance, pga2022$avg_strokes_gained_off_tee, use = "complete.obs", method = "pearson")
+
+driving_avg_strokes_coefficient2023 <- cor(pga2023$avg_distance, pga2023$avg_strokes_gained_off_tee, use = "complete.obs", method = "pearson")
+
+driving_avg_strokes_coefficient2024 <- cor(pga2024$avg_distance, pga2024$avg_strokes_gained_off_tee, use = "complete.obs", method = "pearson")
+
+driving_total_strokes_coefficient2021 <- cor(pga2021$avg_distance, pga2021$total_strokes_gained_off_tee, use = "complete.obs")
+
+driving_total_strokes_coefficient2022 <- cor(pga2022$avg_distance, pga2022$total_strokes_gained_off_tee, use = "complete.obs", method = "pearson")
+
+
+driving_total_strokes_coefficient2023 <- cor(pga2023$avg_distance, pga2023$total_strokes_gained_off_tee, use = "complete.obs", method = "pearson")
+
+
+driving_total_strokes_coefficient2024 <- cor(pga2024$avg_distance, pga2024$total_strokes_gained_off_tee, use = "complete.obs", method = "pearson")
+
+
+driving_coefficients <- data.frame(
+  year = c(2021, 2022, 2023, 2024),
+  avg_strokes_gained_coefficients = c(driving_avg_strokes_coefficent2021, driving_avg_strokes_coefficient2022, driving_avg_strokes_coefficient2023, driving_avg_strokes_coefficient2024),
+  total_strokes_gained_coefficients = c(driving_total_strokes_coefficient2021, driving_total_strokes_coefficient2022, driving_total_strokes_coefficient2023, driving_total_strokes_coefficient2024)
+)
+
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+
+all_avg_coefficient_driving <- cor(all_driving_strokes_gained$avg_distance, all_driving_strokes_gained$avg_strokes_gained_off_tee, use = "complete.obs", method = "pearson")
+
+
+all_driving_strokes_gained %>% 
+  ggplot(aes(x = avg_distance, y = avg_strokes_gained_off_tee)) + geom_point() + geom_smooth(method = "lm") + labs(title = "Driving Distance and Average Strokes Gained: Off-Tee", subtitle = "from 2021 PGA Tour Season to 2024 PGA Tour Season", x = "Average Driving Distance (yds)", y = "Average Strokes Gained: Off-Tee")
+
+
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+#| label: fig-distance-strokes-gained
+#| fig-pos: H
+#| fig-cap-location: bottom
+#| fig-cap: "Scatterplots between every golfers' average distance and average/total strokes gained: off-tee from the 2021 PGA Tour season to the 2024 PGA Tour season."
+
+
+all_total_coefficient <- cor(all_driving_strokes_gained$avg_distance, all_driving_strokes_gained$total_strokes_gained_off_tee, use = "complete.obs", method = "pearson")
+
+
+
+all_driving_strokes_gained %>% 
+  ggplot(aes(x = avg_distance, y = total_strokes_gained_off_tee)) + geom_point() + geom_smooth(method = "lm") + labs(title = "Average Distance and Total Strokes Gained: Off-Tee", subtitle = "from 2021 PGA Tour Season to 2024 PGA Tour Season", x = "Driving Distance (yds)", y = "Total Strokes Gained: Off-Tee")
+
+
+
+```
+
+\noindent @fig-distance-strokes-gained shows that there is a positive
+relationship between driving distance and strokes gained off the tee.
+So, extra distance off the tee can provide players an advantage for
+golfers against the competition. @fig-coefficients reveals that the
+correlation between driving distance and strokes gained was at its
+highest in the 2023 PGA Tour season, around .6, but correlation between
+driving distance and strokes gained remains around .56.
+
+```{r, message=FALSE, echo=FALSE}
+#| label: fig-coefficients
+#| fig-pos: H
+#| fig-cap-location: bottom
+#| fig-cap: "Line chart of correlation coefficients between driving distance and average/total strokes gained: off-tee by season."
+
+
+
+driving_coefficients_long <- pivot_longer(driving_coefficients,
+cols = avg_strokes_gained_coefficients:total_strokes_gained_coefficients)
+
+
+driving_coefficients_long %>% 
+  ggplot(aes(x = year, y = value, color = name)) + geom_line() + geom_point() + 
+labs(title = "Correlation Coefficients Between Distance and Strokes Gained", subtitle = "by Season", x = "Season", y = "Correlation Coefficient") +  scale_color_manual(name = "Statistic", values = c(avg_strokes_gained_coefficients = "red", total_strokes_gained_coefficients = "blue"), labels = c("Average Strokes Gained: Off-Tee", "Total Strokes Gained: Off-Tee"))
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+
+all_driving_strokes_gained %>% 
+  ggplot(aes(x = avg_ball_speed, y = avg_strokes_gained_off_tee)) + geom_point() + geom_smooth(method = "lm") + labs(title = "Average Ball Speed and Average Strokes Gained: Off-Tee", subtitle = "from 2021 PGA Tour Season to 2024 PGA Tour Season", x = "Ball Speed (MPH)", y = "Average Strokes Gained: Off-Tee")
+
+
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+#| label: fig-ball-speed-strokes-gained
+#| fig-pos: H
+#| fig-cap-location: bottom
+#| fig-cap: "Scatterplots between every golfer's average ball speed and average/total strokes gained: off-tee from the 2021 PGA Tour season to the 2024 PGA Tour season"
+
+
+
+all_driving_strokes_gained %>% 
+  ggplot(aes(x = avg_ball_speed, y = total_strokes_gained_off_tee)) + geom_point() + geom_smooth(method = "lm") + labs(title = "Average Ball Speed and Total Strokes Gained: Off-Tee", subtitle = "from 2021 PGA Tour Season to 2024 PGA Tour Season", x = "Ball Speed (MPH)", y = "Total Strokes Gained: Off-Tee")
+
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+
+speed_coefficient_avg2021 <- cor(pga2021$avg_ball_speed, pga2021$avg_strokes_gained_off_tee, use = "complete.obs", method = "pearson")
+
+speed_coefficient_avg2022 <- cor(pga2022$avg_ball_speed, pga2022$avg_strokes_gained_off_tee, use = "complete.obs", method = "pearson")
+
+speed_coefficient_avg2023 <- cor(pga2023$avg_ball_speed, pga2023$avg_strokes_gained_off_tee, use = "complete.obs", method = "pearson")
+
+speed_coefficient_avg2024 <- cor(pga2024$avg_ball_speed, pga2024$avg_strokes_gained_off_tee, use = "complete.obs", method = "pearson")
+
+
+speed_coefficient_total2021 <- cor(pga2021$avg_ball_speed, pga2021$total_strokes_gained_off_tee, use = "complete.obs", method = "pearson")
+
+speed_coefficient_total2022 <- cor(pga2022$avg_ball_speed, pga2022$total_strokes_gained_off_tee, use = "complete.obs", method = "pearson")
+
+speed_coefficient_total2023 <- cor(pga2023$avg_ball_speed, pga2023$total_strokes_gained_off_tee, use = "complete.obs", method = "pearson")
+
+speed_coefficient_total2024 <- cor(pga2024$avg_ball_speed, pga2024$total_strokes_gained_off_tee, use = "complete.obs", method = "pearson")
+
+
+speed_coefficients <- data.frame(
+  year = c(2021, 2022, 2023, 2024),
+  avg_coefficients = c(speed_coefficient_avg2021, speed_coefficient_avg2022, speed_coefficient_avg2023, speed_coefficient_avg2024),
+  total_coefficients = c(speed_coefficient_total2021, speed_coefficient_total2022, speed_coefficient_total2023, speed_coefficient_total2024)
+)
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+
+speed_coefficients_longer <- pivot_longer(speed_coefficients, cols = avg_coefficients:total_coefficients)
+
+```
+
+\noindent @fig-ball-speed-strokes-gained conveys that there is a
+positive relationship relationship between average ball speed and
+average/total strokes gained: off-tee, but the correlation between ball
+speed and strokes gained isn't as strong of a relationship between
+distance and strokes gained shown in @fig-speed-coefficients as the
+coefficient hovers around .46.
+
+```{r, message=FALSE, echo=FALSE}
+#| label: fig-speed-coefficients
+#| fig-pos: H
+#| fig-cap-location: bottom
+#| fig-cap: Line chart showing changes in the correlation coefficient between ball speed and strokes gained by season. 
+
+
+
+
+speed_coefficients_longer %>% 
+  ggplot(aes(x = year, y = value, color = name)) + geom_line() + geom_point() + labs(title = "Correlation Coefficients Between Ball Speed and Strokes Gained", subtitle = "by Season", x = "Season", y = "Correlation Coefficient") + scale_color_manual(name = "Statistic", values = c(avg_coefficients = "red", total_coefficients = "blue"), labels = c("Average Strokes Gained: Off-Tee", "Total Strokes Gained: Off-Tee"))
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+
+all_driving_strokes_gained %>% 
+  ggplot(aes(x = fairway_percentage, y = avg_strokes_gained_off_tee)) + geom_point() + geom_smooth(method = "lm") + labs(title = "Fairway Percentage and Average Strokes Gained: Off-Tee", subtitle = "from 2021 PGA Tour Season to 2024 PGA Tour Season", x = "Fairway Percentage", y = "Average Strokes Gained: Off-Tee")
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+#| label: fig-fairway-pct-strokes
+#| fig-pos: H
+#| fig-cap-location: bottom
+#| fig-cap: "Scatterplots between every golfer's fairway percentage and average/total strokes gained: off-tee from the 2021 PGA Tour season to the 2024 PGA Tour season"
+
+all_driving_strokes_gained %>% 
+  ggplot(aes(x = fairway_percentage, y = total_strokes_gained_off_tee)) + geom_point() + geom_smooth(method = "lm") + labs(title = "Fairway Percentage and Total Strokes Gained: Off-Tee", subtitle = "from the 2021 PGA Tour Season to 2024 PGA Tour Season", x = "Fairway Percentage", y = "Total Strokes Gained: Off-Tee")
+
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+
+fairway_coefficient_avg2021 <- cor(pga2021$fairway_percentage, pga2021$avg_strokes_gained_off_tee, use = "complete.obs", method = "pearson")
+
+fairway_coefficient_avg2022 <- cor(pga2022$fairway_percentage, pga2022$avg_strokes_gained_off_tee, use = "complete.obs", method = "pearson")
+
+fairway_coefficient_avg2023 <- cor(pga2023$fairway_percentage, pga2023$avg_strokes_gained_off_tee, use = "complete.obs", method = "pearson")
+
+fairway_coefficient_avg2024 <- cor(pga2024$fairway_percentage, pga2024$avg_strokes_gained_off_tee, use = "complete.obs", method = "pearson")
+
+
+fairway_coefficient_total2021 <- cor(pga2021$fairway_percentage, pga2021$total_strokes_gained_off_tee, use = "complete.obs", method = "pearson")
+
+fairway_coefficient_total2022 <- cor(pga2022$fairway_percentage, pga2022$total_strokes_gained_off_tee, use = "complete.obs", method = "pearson")
+
+fairway_coefficient_total2023 <- cor(pga2023$fairway_percentage, pga2023$total_strokes_gained_off_tee, use = "complete.obs", method = "pearson")
+
+fairway_coefficient_total2024 <- cor(pga2024$fairway_percentage, pga2024$total_strokes_gained_off_tee, use = "complete.obs", method = "pearson")
+
+
+
+fairway_coefficients <- data.frame(
+  year = c(2021, 2022, 2023, 2024),
+  avg_strokes_gained_coefficient = c(fairway_coefficient_avg2021, fairway_coefficient_avg2022, fairway_coefficient_avg2023, fairway_coefficient_avg2024), 
+  total_strokes_gained_coefficient = c(fairway_coefficient_total2021, fairway_coefficient_avg2022, fairway_coefficient_avg2023, fairway_coefficient_total2024)
+)
+
+
+fairway_longer <- pivot_longer(fairway_coefficients, cols = avg_strokes_gained_coefficient:total_strokes_gained_coefficient)
+
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+#| label: fig-fairway-coefficients
+#| fig-pos: H
+#| fig-cap-location: bottom
+#| fig-cap: "Correlation coefficients between fairway percentage and average/total strokes gained: off-tee by season"
+
+
+
+fairway_longer %>% 
+  ggplot(aes(x = year, y = value, color = name)) + geom_line() + geom_point() + labs(title = "Correlation Coefficients Between Fairway Percentage and Strokes Gained", subtitle = "by Season", x = "Season", y = "Correlation Coefficient") + scale_color_manual(name = "Statistic", values = c(avg_strokes_gained_coefficient = "red", total_strokes_gained_coefficient = "blue"), labels = c("Average Strokes Gained: Off-Tee", "Total Strokes Gained: Off-Tee"))
+
+
+```
+
+\noindent @fig-fairway-pct-strokes shows that there is a weak, positive
+relationship between fairway percentage and strokes gained: off-tee.
+@fig-fairway-coefficients confirms the pattern shown in
+@fig-fairway-pct-strokes as the correlation coefficients for both
+average and total strokes gained: off-tee doesn't go above .24,
+confirming that relationship between fairway percentage and strokes
+gained: off-tee is a relatively weak one.
+
+```{r, message=FALSE, echo=FALSE}
+positive_strokes_gained2021 <- count(pga2021$total_strokes_gained_off_tee > 0)
+positive_strokes_gained2022 <- count(pga2022$total_strokes_gained_off_tee > 0)
+positive_strokes_gained2023 <- count(pga2023$total_strokes_gained_off_tee > 0)
+positive_strokes_gained2024 <- count(pga2024$total_strokes_gained_off_tee > 0)
+
+
+positive_strokes_gained_off_tee <- data.frame(
+  year = c(2021, 2022, 2023, 2024),
+  count = c(positive_strokes_gained2021, positive_strokes_gained2022, positive_strokes_gained2023, positive_strokes_gained2024)
+)
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+
+positive_strokes_gained_off_tee %>% 
+  ggplot(aes(x = year, y = count, fill = as.factor(year))) + geom_bar(stat = "identity") + labs(title = "Number of Golfers with Positive Strokes Gained: Off-Tee", subtitle = "by Season", x = "Season", y = "Count", fill = "Season") + geom_text(aes(label = count), vjust = -.3)
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+
+positive_percentage2021 <- (positive_strokes_gained2021/195) * 100
+positive_percentage2022 <- (positive_strokes_gained2022/189) * 100
+positive_percentage2023 <- (positive_strokes_gained2023/190) * 100
+positive_percentage2024 <- (positive_strokes_gained2024/184) * 100
+
+
+percentages_strokes_gained <- data.frame(
+  year = c(2021, 2022, 2023, 2024),
+  percentages = c(round(positive_percentage2021, 2), round(positive_percentage2022, 2), round(positive_percentage2023, 2), round(positive_percentage2024, 2))
+)
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+#| label: fig-count-positive
+#| fig-pos: H
+#| fig-cap-location: bottom
+#| fig-cap: "Bar charts of the number of golfers with a positive total strokes gained: off-tee and the percentage of golfers with a positive total by season"
+
+
+
+percentages_strokes_gained %>% 
+  ggplot(aes(x = year, y = percentages)) + geom_bar(stat = "identity", aes(fill = as.factor(year))) + labs(title = "Percentage of Golfers with Postive Strokes Gained: Off-Tee", subtitle = "by Season", x = "Season", y = "Percentage", fill = "Season") + geom_text(aes(label = percentages), vjust = -.3)
+
+```
+
+\noindent When it comes to metrics off the tee, players are hitting the
+ball longer and harder since the COVID-19 pause. Increased distance and
+ball speed hasn't had a drastic effect on fairway percentage. When it
+comes to gaining an advantage off the tee, distance has a stronger
+correlation with average and total strokes gained: off-tee than ball
+speed and fairway percentage, which may suggest that increasing distance
+may contribute to an increased advantage off the tee while increasing
+ball speed or fairway percentage may be marginal gains at best. On tour,
+the percentage of golfers with a positive strokes gained: off-tee is
+well above 50%, which means that a majority of golfers are better than
+the average PGA Tour golfer when it comes to tee shots
+(@fig-count-positive). This suggests that gaining advantages off the tee
+isn't that great of a differentiator from other PGA Tour golfers, so
+increasing distance, ball speed, or fairway percentage doesn't offer a
+great advantage for a golfer because so many golfers are good off the tee. 
+
+\noindent To summarize, if a golfer wants to gain an
+advantage when it comes to tee shots, they should prioritize gaining
+distance. However, gaining distance to gain strokes off the tee may have
+a minimal effect given that a majority of golfers can gain an advantage
+off the tee, so any gains may be marginalized given how good other PGA
+Tour golfers are off the tee.
+
+# What Metrics Correlate the Most With Success?
+
+\noindent This question will observe what metrics contribute the most to
+success using predictive models and other charts.
+
+```{r, message=FALSE, echo=FALSE}
+#| label: fig-top10-2024
+#| fig-pos: H
+#| fig-cap-location: bottom
+#| fig-cap: Top 10 Correlation Matrix
+
+
+all_season_stats <- rbind(pga2021, pga2022)
+
+all_season_stats <- rbind(pga2023, all_season_stats)
+
+all_season_stats <- rbind(pga2024, all_season_stats)
+
+
+all_numbers <- all_season_stats %>% 
+  select(where(~ !is.character(.)))
+
+
+driving_numbers_money_10 <- all_numbers %>% 
+  select(avg_distance, avg_ball_speed, fairway_percentage, avg_strokes_gained_off_tee, total_strokes_gained_off_tee, `TOP 10`, MONEY)
+
+approach_numbers_money_10 <- all_numbers %>% 
+  select(`TOP 10`, MONEY, gir_percentage, scramble_pct, avg_strokes_gained_approach, total_strokes_gained_approach)
+
+
+putting_numbers_money_10 <- all_numbers %>% 
+  select(`TOP 10`, MONEY, three_putt_percentage, avg_putts_per_hole, `GIR PUTTS`, `BIRDIE CONVERSION`, avg_strokes_gained_putting, total_strokes_gained_putting)
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+
+driving_matrix <- cor(driving_numbers_money_10)
+
+top_10_driving_matrix <- driving_matrix[, "TOP 10", drop = FALSE]
+
+corrplot(top_10_driving_matrix, method = "number")
+
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+#| label: fig-driving-success
+#| fig-pos: H
+#| fig-cap-location: bottom
+#| fig-cap: Correlation plots pinning money and top 10 finishes to certain driving metrics (All golfers from 2021 - 2024)
+
+
+money_driving_matrix <- driving_matrix[, "MONEY", drop = FALSE]
+
+
+corrplot(money_driving_matrix, method = "number")
+
+```
+
+\noindent When it comes to off the tee statistics like fairway
+percentage, driving distance, and ball speed, @fig-driving-success shows
+that those metrics have a weak correlation with success on tour. Out of
+all the driving statistics, strokes gained: off-tee is the most
+correlated with success, which is expected.
+
+```{r, message=FALSE, echo=FALSE}
+
+approach_matrix <- cor(approach_numbers_money_10)
+
+top_10_approach_matrix <- approach_matrix[, "TOP 10", drop = FALSE]
+
+corrplot(top_10_approach_matrix, method = "number")
+
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+#| label: fig-approach-success
+#| fig-pos: H
+#| fig-cap-location: bottom
+#| fig-cap: Correlation plots pinning money and top 10 finishes to certain approach metrics (All golfers from 2021-2024)
+
+
+
+money_approach_matrix <- approach_matrix[, "MONEY", drop = FALSE]
+
+corrplot(money_approach_matrix, method = "number")
+
+
+```
+
+\noindent Regarding approach statistics like the greens in regulation
+percentage and scramble percentage, @fig-approach-success shows that
+there is a weak correlation between green in regulation percentage and
+success, but scramble percentage has a slightly stronger correlation
+with success. Compared to driving statistics, the correlation between
+strokes gained: approach and success is stronger than the correlation
+between strokes gained: off-tee and success.
+
+```{r, message=FALSE, echo=FALSE}
+
+putting_matrix <- cor(putting_numbers_money_10)
+
+top_10_putting_matrix <- putting_matrix[, "TOP 10", drop = FALSE]
+
+corrplot(top_10_putting_matrix, method = "number")
+
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+#| label: fig-putting-success
+#| fig-pos: H
+#| fig-cap-location: bottom
+#| fig-cap: Correlation plots pinning top 10 finishes and earnings with certain putting metrics (All golfers from 2021-2024).  
+
+
+money_putting_matrix <- putting_matrix[, "MONEY", drop = FALSE]
+
+corrplot(money_putting_matrix, method = "number")
+
+
+```
+
+\noindent When it comes to putting, @fig-putting-success shows that
+putts per hole and three putt percentage has a negative correlation with
+success on tour. Out of all the basic metrics, putts per hole and birdie
+conversion rate have the strongest correlation with success. Compared to
+approach and driving strokes gained, strokes gained: putting has the
+weakest correlation with success on the PGA Tour.
+
+\
+
+\noindent \*\*Model 1 (w/Strokes Gained Numbers)\*\*
+
+```{r, message=FALSE, echo=FALSE}
+
+set.seed(44)
+testID <- sample(1:nrow(all_numbers), size = round(.20*nrow(all_numbers)))
+
+Test <- all_numbers[testID, ]
+Train <- all_numbers[-testID, ]
+
+
+golf_model <- lm(log(`MONEY`) ~ avg_strokes_gained_off_tee + total_strokes_gained_off_tee + avg_strokes_gained_approach + total_strokes_gained_approach + avg_strokes_gained_putting + total_strokes_gained_putting + avg_distance + avg_ball_speed + fairway_percentage + gir_percentage + scramble_pct + three_putt_percentage + avg_putts_per_hole + `BIRDIE CONVERSION`, data = Test)
+
+summary(golf_model)
+
+
+```
+
+\noindent \*\*Model 2 (no Strokes Gained Numbers)\*\*
+
+```{r, message=FALSE, echo=FALSE}
+
+basic_model <- lm(log(`MONEY`) ~ avg_distance + avg_ball_speed + fairway_percentage + gir_percentage + scramble_pct + three_putt_percentage + avg_putts_per_hole + `BIRDIE CONVERSION`, data = Test)
+
+
+summary(basic_model)
+
+```
+
+\noindent Out of all the strokes gained metrics, strokes gained on
+approach shots have the strongest correlation with success on the PGA
+Tour when it comes to top 10 finishes and earnings. The stronger
+correlation might suggest that for a golfer to gain an advantage on
+tour, increased focus on a golfer's approach shots could pay dividends.
+Regarding basic metrics, numbers related to putting tend to have the
+strongest correlation with success. @fig-driving-success also shows that
+the relationship between distance and ball speed with success is a weak
+relationship, which might suggest that distance off the tee or hitting
+the ball harder has a marginal effect on a golfer's success.
+
+\noindent However, when testing the data using a linear model, the model
+that includes strokes gained numbers suggests that the average strokes
+gained off the tee, total strokes gained on approach shots, and average
+strokes gained on approach shots are significant enough to affect a
+golfer's ability to earn money on tour. In the model without the strokes
+gained numbers, the model deems average distance, fairway percentage,
+greens in regulation percentage, scramble percentage, and average putts
+per hole as significant enough variables that affect one's ability to
+earn money on the PGA Tour.
+
+# Case Study: Scottie Scheffler
+
+\noindent One of the biggest jumps in performance on tour from 2021 -
+2024 was the performance of Scottie Scheffler. Scheffler, at the time of
+writing this, is a 4-time major winner (2 Masters, 1 PGA, 1 Open) and
+has another 17 wins on the PGA Tour. He has held the title of No. 1
+golfer in the world for 149 weeks. No one except Tiger Woods has been
+No.1 for that long. However, his first PGA Tour win was in 2022, so what
+caused this astronomical rise to being in the same breath as Tiger
+Woods?
+
+```{r, message=FALSE, echo=FALSE}
+
+scheffler2024 <- pga2024 %>% 
+  filter(PLAYER == "Scottie Scheffler")
+
+scheffler2023 <- pga2023 %>% 
+  filter(PLAYER == "Scottie Scheffler")
+
+scheffler2022 <- pga2022 %>% 
+  filter(PLAYER == "Scottie Scheffler")
+
+scheffler2021 <- pga2021 %>% 
+  filter(PLAYER == "Scottie Scheffler")
+
+scheffler2021$`1ST` = 0
+
+scheffler <- rbind(scheffler2021, scheffler2022)
+
+scheffler <- rbind(scheffler, scheffler2023)
+
+scheffler <- rbind(scheffler, scheffler2024)
+
+scheffler$season <- c(2021, 2022, 2023, 2024)
+
+
+scheffler <- scheffler[, c("season", setdiff(names(scheffler), "season"))]
+
+scheffler$PLAYER_ID = NULL
+
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+#| label: fig-scheffler-wins
+#| fig-pos: H
+#| fig-cap-location: bottom
+#| fig-cap: Scottie Scheffler wins by season
+
+
+
+scheffler %>% 
+  ggplot(aes(x = season, y = `1ST`)) + geom_line() + geom_point() + labs(title = "Scottie Scheffler PGA Tour Victories", subtitle = "by Season", x = "Season", y = "Wins")
+
+```
+
+\noindent This chart shows Scottie Scheffler's rise to one of the best
+to ever play the game. As stated before, his first PGA Tour win was in
+2022, but he ended up winning 4 events that season, including the 2022
+Masters Tournament. After a 2-win season in 2023, this past season saw
+him win a staggering 7 events, which included another Masters title and
+the Tour Championship.
+
+```{r, message=FALSE, echo=FALSE}
+#| label: fig-scheffler-total-strokes-gained
+#| fig-pos: H
+#| fig-cap-location: bottom
+#| fig-cap: "Scottie Scheffler's total strokes gained by season. Total strokes gained = total strokes gained: off-tee + total strokes gained: approach + total strokes gained: putting"
+
+
+scheffler %>% 
+  ggplot(aes(x = season, y = total_strokes_gained)) + geom_line() + geom_point() + labs(title = "Scottie Scheffler Total Strokes Gained (Off-tee, Approach, Putting)", subtitle = "by Season", x = "Season", y = "Total Strokes Gained")
+
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+
+
+scheffler_strokes_gained <- scheffler %>% 
+  select(season, avg_strokes_gained_off_tee, total_strokes_gained_off_tee, avg_strokes_gained_approach, total_strokes_gained_approach, avg_strokes_gained_putting, total_strokes_gained_putting)
+
+scheffler_avg_strokes <- scheffler_strokes_gained %>% 
+  select(season, avg_strokes_gained_off_tee, avg_strokes_gained_approach, avg_strokes_gained_putting)
+
+scheffler_total_strokes <- scheffler_strokes_gained %>% 
+  select(season, total_strokes_gained_off_tee, total_strokes_gained_approach, total_strokes_gained_putting)
+
+
+scheffler_avg_long <- pivot_longer(scheffler_avg_strokes, cols = avg_strokes_gained_off_tee:avg_strokes_gained_putting)
+
+scheffler_total_long <- pivot_longer(scheffler_total_strokes, cols = total_strokes_gained_off_tee:total_strokes_gained_putting)
+
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+
+scheffler_avg_long %>% 
+  ggplot(aes(x = season, y = value, color = name)) + geom_line() + geom_point() + labs(title = "Scottie Scheffler Average Strokes Gained", subtitle = "by Shot Type", x = "Season", y = "Average Strokes Gained") + scale_color_manual(name = "Statistic", values = c(avg_strokes_gained_approach = "red", avg_strokes_gained_off_tee = "blue", avg_strokes_gained_putting = "green"), labels = c("Average Strokes Gained: Approach", "Average Strokes Gained: Off-Tee", "Average Strokes Gained: Putting"))
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+#| label: fig-scheffler-breakdown
+#| fig-pos: H
+#| fig-cap-location: bottom
+#| fig-cap: Breakdown of Scottie Scheffler's average and total strokes gained numbers by shot type
+
+
+scheffler_total_long %>% 
+  ggplot(aes(x = season, y = value, color = name)) + geom_line() + geom_point() + labs(title = "Scottie Scheffler Total Strokes Gained", subtitle = "by Season", x = "Season", y = "Total Strokes Gained") + scale_color_manual(name = "Statistic", values = c(total_strokes_gained_approach = "red", total_strokes_gained_off_tee = "blue", total_strokes_gained_putting = "green"), labels = c("Total Strokes Gained: Approach", "Total Strokes Gained: Off-Tee", "Total Strokes Gained: Putting"))
+
+
+```
+
+\noindent @fig-scheffler-total-strokes-gained shows the jump in strokes
+gained from the 2021 PGA Tour season to the 2022 PGA Tour season.
+Scheffler went from around 60 strokes gained to over 130 strokes gained
+in three years. @fig-scheffler-breakdown shows that in terms of total
+strokes gained, Scheffler greatly improved in his approach shots going
+from around 15 strokes gained to around 60 strokes gained on approach
+shots. From 2022-2023, Scheffler continued to gain strokes on his
+approach shots, but saw jump from around 30 strokes gained off the tee
+to around 75 strokes gained. Despite these big jumps in his off-tee and
+approach shots, he's very average/below average when it comes to gaining
+strokes on the green. In 2023 alone, he averaged -.25 strokes gained:
+putting with a total of below -15 strokes gained: putting. Even though
+his putter isn't the best on tour, he separates himself from others off
+the tee and on approach shots gaining on average 1 stroke, which is
+elite. @fig-box-comparison, which uses numbers from Scheffler's most
+successful season, supports this notion as Scheffler is average when it
+comes to gaining strokes on the green, above average off the tee, and
+otherworldly on his approach shots.
+
+```{r, message=FALSE, echo=FALSE, warning=FALSE}
+
+pga2024 %>% 
+  ggplot(aes(x = avg_strokes_gained_approach)) + geom_boxplot() + geom_segment(aes(x = 1, y = .2, xend = 1.269, yend = 0)) + geom_text(aes(x = 1, y = .23, label = "Scottie Scheffler")) + labs(title = "Boxplot of Average Strokes Gained: Approach", subtitle = "2024 PGA Tour Season", x = "Average Strokes Gained: Approach", y = " ")
+
+
+```
+
+```{r, message=FALSE, echo=FALSE, warning=FALSE}
+
+
+pga2024 %>% 
+  ggplot(aes(x = avg_strokes_gained_off_tee)) + geom_boxplot() + geom_point(aes(x = .816, y = 0)) + geom_segment(aes(x = .816, y = .2, xend = .816, yend = .01)) + geom_text(aes(x = .7, y = .225, label = "Scottie Scheffler")) + labs(title = "Boxplot of Average Strokes Gained: Off-Tee", subtitle = "2024 PGA Tour Season", x = "Average Strokes Gained: Off-Tee", y = "")
+
+```
+
+```{r, message=FALSE, echo=FALSE, warning=FALSE}
+#| label: fig-box-comparison
+#| fig-pos: H
+#| fig-cap-location: bottom
+#| fig-cap: Boxplots of off-tee, putting, and approach metrics with Scottie Scheffler's average strokes gained number in the 2024 PGA Tour season. 
+
+
+pga2024 %>% 
+  ggplot(aes(x = avg_strokes_gained_putting)) + geom_boxplot() + geom_point(aes(x = .095, y = 0), shape = 8) + geom_label(aes(x = .7, y = .4, label = "*-Scottie Scheffler")) + labs(title = "Boxplot of Strokes Gained: Putting", subtitle = "2024 PGA Tour Season", x = "Average Strokes Gained: Putting", y = "")
+
+```
+
+# Discussion
+
+To answer the question: Does distance contribute to success on the PGA Tour? Results-wise, the answer is no. There is not a strong correlation between driving distance and success in terms of top 10 finishes or the amount of money one can earn on tour. So why pursue distance? Even though distance might not directly contribute to on-course success, distance may help a golfer gain an advantage on other golfers when it comes to tee shots. Out of all the driving metrics (ball speed, fairway percentage, distance), distance is the most correlated with strokes gained off the tee. When it comes to fairway percentage and ball speed, fairway percentage on tour has hovered around 60% between the 2021 and 2024 PGA Tour seasons, while average ball speed and average driving distance has marginally increased in the same period. This suggests that players have been able to increase distance without sacrificing the need to be in the fairway, which makes hitting the fairway less valuable when it comes to trying to gain an advantage on other golfers off the tee. Technically, increased driving distance means that approach shots are shorter, which means that golfers can hit more manageable approach shots with shorter irons, which may allow them to be a bit more aggressive on their approach shots. 
+
+Even though distance can contribute to gaining more strokes off the tee, gaining strokes off the tee isn't the sole reason why one can have success on the PGA Tour. It's common sense that the best golfers in the world are very well-rounded and don't solely rely on one type of shot to be successful, although some golfers have their calling card. In Scottie Scheffler's case, his approach game is levels above everybody else on the PGA Tour. With Bryson Dechambeau in 2020-2021, his driving game was levels above everybody else. Even though golfers may be elite in one certain shot type, they need to be average to above average on other shots as well. Outside of his approach game, Scottie Scheffler is above average off the tee, but he's around tour average when it comes to his putting. However, he can be average on the putting green because of his elite approach game and very good driving ability. Using Scottie Scheffler as an example, we could assume that Bryson DeChambeau's success from 2020-2021 wasn't solely on his driving distance/ability off the tee, but rather he was average to above average when it came to his approach shots, putting, and shots around the green.
+
+Although these figures can depict certain aspects of the game and what we see, it shouldn't tell the whole story of one's ability to have success on the PGA Tour. There are so many variables associated with golf that may affect how these metrics are taken. Even though the PGA Tour's ShotLink tech considers as much as it can into its overall numbers, it's borderline impossible to take into account all factors. As one who doesn't know all of the in's and out's of the PGA Tour's ShotLink data, how do course conditions, course difficulty, and weather taken into account in it's algorithms and models? Also, has the model for its ShotLink data changed from 2021-2024. There are surely tweaks made to the model to better depict golfers' ability on tour, but has the model been unfair? For example, the average number of strokes gained on tour has declined from 2021-2024. Has the quality of play declined on tour? Or is the model being too unfair when it comes to its strokes gained numbers? Another area where there may be potential inconsistencies with the model is how the model takes into account certain holes. For example, how does a short par 4 affect how strokes gained: off-tee is calculated? How does the model take into account a par 4 where most players take a long iron, wood, or hybrid off the tee? Also when it comes to basic metrics like distance, are iron shots included into the calculation? If that's the case, how does it affect average driving distance? As explained by the countless questions of how the ShotLink model works, the game of golf is never straightforward. There are so many variables that affect how a golfer performs, most of which can't be quantified. So, there are many inconsistencies associated with unquantified variables, which may affect interpretation. For example, even though distance may have a strong correlation with gaining an advantage off the tee, there are many confounding variables that may not be quantifiable, so a positive relationship with strokes gained doesn't mean that gained strokes off the tee were caused by a gain in driving distance. 
+
+In terms of future questions that may utilize this data, it would be interesting to see how the presence of the LIV Golf League affected the state of the PGA Tour. As seen prior, there is a notable drop in the tour average total strokes gained number in 2022. Could that be attributed to the drama regarding PGA Tour players defecting to LIV Golf? To further build off this, does the same trend apply to other golf tours like LIV Golf, Korn Ferry Tour, and the PGA Champions Tour? It would also be interesting to only use data from bigger events (PGA Tour Signature Events, Majors, etc.) and see if the same trend applies to those events. Do players elevate their game when it comes to those events? 
+
+
+
+# Conclusion
+
+In golf, there are many factors that can contribute or hinder a golfer's ability to be successful. Over the last couple years, golfers have been hitting the ball further and longer. As evidenced by Bryson DeChambeau's success from 2020-2021, the role of distance in a golfer's success became a valid discussion. Even though DeChambeau credited his newfound distance to why he had so much success in that time frame, it's difficult to suggest that distance directly leads to success. So, despite the increases in driving distance and ball speed, the best golfers are well-rounded and shouldn't heavily rely on distance to try and have success. 
+
+
+# References
+
+\noindent Cradock, M. (2021, August 27). “Pathetic” - Phil Mickelson Slams 
+
+USGA Over Possible Equipment Changes. Golf Monthly. 
+
+https://www.golfmonthly.com/news/tour-news
+
+/pathetic-phil-mickelson-slams-usga-over-possible-equipment-changes-243392 
+
+
+\noindent Hall, M. (2025, January 25). “I Don’t Know One Recreational Golfer That Wants To Hit 
+
+It Shorter” - PGA Of America CEO Criticizes Golf Ball Rollback Plan. 
+
+Golf Monthly. https://www.golfmonthly.com/news/pga-of-america-golf-ball-rollback 
+
+\noindent PGA Tour. (n.d.). PGA Tour Stats [Dataset]. https://www.pgatour.com/stats 
+
+\noindent Wall, J. (2023, December 6). The golf-ball rollback is official. Here’s what the governing 
+
+bodies have planned. Golf.com. https://golf.com/gear/golf-balls
+
+/golf-ball-rollback-official-what-it-means/?srsltid=AfmBOopLjYnfyCRVYT1ddddq8C38kbyh
+
+YuIZcewYednD7s-PspERtakp 
+
+ 
+
+
+
+
+
+
